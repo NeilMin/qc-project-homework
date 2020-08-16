@@ -1,28 +1,42 @@
 package main
 
 import (
-    "flag"
-    "fmt"
-    "os"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
 )
-	
+
+type WeatherInfoJson struct {
+	Weatherinfo WeatherinfoObject
+}
+
+type WeatherinfoObject struct {
+	City    string
+	CityId  string
+	Temp    string
+	WD      string
+	WS      string
+	SD      string
+	WSE     string
+	Time    string
+	IsRadar string
+	Radar   string
+}
+
 func main() {
-    var t int
-    flag.Usage = func() {
-        fmt.Printf("Usage of %s:\n", os.Args[0])
-        fmt.Printf("使用-type来决定输出唐诗或宋词，使用-h获得帮助。\n")
-        flag.PrintDefaults()
-    }
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	resp, err := http.Get("http://www.weather.com.cn/data/sk/101050101.html")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    flag.IntVar(&t, "type", 100, "决定输出唐诗或宋词")
+	defer resp.Body.Close()
+	input, err := ioutil.ReadAll(resp.Body)
 
-    flag.Parse()
-
-    if t == 1 {
-        fmt.Println("大漠孤烟直,长河落日圆。")
-    }
-
-    if t == 2 {
-        fmt.Println("琵琶弦上说相思，当时明月在，曾照彩云归。")
-    }
+	var jsonWeather WeatherInfoJson
+	json.Unmarshal(input, &jsonWeather)
+	w := jsonWeather.Weatherinfo
+	fmt.Printf("%v现在%v度,有%v。\n", w.City, w.Temp, w.WD)
 }
